@@ -1,0 +1,68 @@
+extern "C" 
+{
+#if 0
+#include <libavcodec/avcodec.h>   //注册
+#include <libavdevice/avdevice.h>  //设备
+#include <libavformat/avformat.h>
+#include <libavutil/error.h>
+#include <libswscale/swscale.h>
+#include <libswresample/swresample.h>
+#endif
+
+#include "global.h"
+#include "v4l2_fb.h"
+}
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+void quit_Hander(int signum)
+{
+	if(signum == SIGINT)
+    {
+        printf("catch Ctrl + C, exit normally\n");
+#if 0
+		fclose(fp);
+		/* 5. 关闭捕获流 */
+		stop_capturing();
+		
+	    uninit_device();
+	    close_device();
+#else
+		v4l2_close();
+		closefb();
+#endif
+    	exit(0);
+	}
+}
+
+int main(int argc, char *argv[])
+{
+#if 1
+	struct sigaction sigAction;
+	sigAction.sa_handler = quit_Hander;
+	sigemptyset(&sigAction.sa_mask);
+	sigAction.sa_flags = 0;
+	sigaction(SIGINT, &sigAction, NULL);
+#else
+	int signum = SIGINT;
+	signal(signum, quit_Hander);
+#endif
+	if(argc != 2)
+	{
+		printf("usage:%s [0|1] \n",argv[0]);
+		return -1;
+	}
+
+	v4l2_init();
+	v4l2_cap();
+	v4l2_enum_fmt();
+	v4l2_set_fmt(0, IMAGE_WIDTH, IMAGE_HEIGHT);
+	v4l2_init_buffer();
+	v4l2_streamon();
+
+	v4l2_readFrame();
+	return 0;
+}
+
